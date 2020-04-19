@@ -13,10 +13,10 @@ from datetime import timedelta
 import requests as web
 import xml.etree.ElementTree as xml
 
-print("numpy Version: ", np.__version__)
-print("pandas Version: ", pd.__version__)
-print("matplotlib Version: ", matplotlib.__version__)
-print("requests Version: ", web.__version__)
+# print("numpy Version: ", np.__version__)
+# print("pandas Version: ", pd.__version__)
+# print("matplotlib Version: ", matplotlib.__version__)
+# print("requests Version: ", web.__version__)
 
 # ## constants
 
@@ -57,7 +57,7 @@ __strToday = dateStartDate.isoformat().replace("-", "")
 __url = strNoaaUrl.replace("<date>", __strToday).replace("<range>", str(intRangeDays * 24))
 
 strXml = web.get(__url)  # this is the web response from NOAA
-print(strXml.text[:130], "...", strXml.text[-50:], sep='\n')
+# print(strXml.text[:130], "...", strXml.text[-50:], sep='\n')
 
 #output
 # strXml
@@ -80,8 +80,8 @@ __dtTimes = [datetime.strptime(t, "%Y-%m-%d %H:%M") for t in __strTimes]
 # convert times (datetime format) to "minutes since StartDate" (usually midnight of the current day)
 fltTimes = [(t - datetimeToday).total_seconds() / 60 for t in __dtTimes]
 
-print(len(fltTimes), fltTimes[:4])
-print(len(fltLevels), fltLevels[:4])
+# print(len(fltTimes), fltTimes[:4])
+# print(len(fltLevels), fltLevels[:4])
 
 #output
 # fltTimes
@@ -132,8 +132,8 @@ lstLabels = list([formatMinutesToConciseHourLabel(60*24)])  # start it off with 
 for minute in lstLabelLocs[1:] :
     lstLabels.append(formatMinutesToConciseHourLabel(int(minute)))
     
-print(lstLabelLocs)
-print(lstLabels)
+# print(lstLabelLocs)
+# print(lstLabels)
 
 #output
 # lstLabelLocs
@@ -149,7 +149,7 @@ fig, ax = plt.subplots(figsize=(20,6))
 
 ax.set_xlim(0,1)  # remove the left/right padding around the plot area
 ax.set_ylim(0,1)  # remove the top/bottom padding around the plot area
-ax.set_title(datetime.strftime(dateStartDate, "%A %B"), loc = 'left')
+ax.set_title(datetime.strftime(dateStartDate, "%A %B %d"), loc = 'left')
 ax.set_ylabel("water level")
 
 # tick marks a time-axis labels
@@ -164,13 +164,3 @@ ax.fill_between(fltTimes, 0, fltLevels)  # fill in the area under the curve
 
 plt.show()
 None
-
-
-# In[ ]:
-
-
-
-
-
-
-# %%
