@@ -45,8 +45,10 @@ def total_minutes(tdTimeDelta) :  # this is an obviously-missing method in timed
 def formatMinutesToConciseHourLabel(minute) :  # e.g. 06:00 => 6a
     timeZero = datetime(1900,1,1)
     tdDelta = timedelta(minutes=minute)
-    strHour = datetime.strftime(timeZero + tdDelta, "%I%p")  # just zero-padded hour and AM/PM
-    return strHour.replace("0", "").replace("AM", "a").replace("PM","p")
+    strHour = datetime.strftime(timeZero + tdDelta, "%I%p")  # just zero-padded hour and AM/PM ('-I' doesn't work)
+    if (strHour.startswith('0')):
+        strHour = strHour.replace("0", "")
+    return strHour.replace("AM", "a").replace("PM","p")
 
 
 # ## get xml tide data from NOAA
@@ -95,7 +97,7 @@ fltTimes = [(t - datetimeToday).total_seconds() / 60 for t in __dtTimes]
 
 def createNightAndDaySegment(tdStartOfNight, lstX, lstY) :  # a new "high" segment and a "low" segment is added to LstX/lstY
     tdRelativeStart = tdStartOfNight
-    lstY.extend([7, 7, -1, -1])
+    lstY.extend([7, 7, -2, -2])
     lstX.append(total_minutes(tdRelativeStart))
     tdRelativeStart += tdHalfDay
     lstX.append(total_minutes(tdRelativeStart))
@@ -125,7 +127,7 @@ while __tdStartOfSegment < tdRange :
 
 # set up some durations (in minutes)
 __nMinutesInGraph = fltTimes[-1]
-__nMinutesPerTick = int(3 * 60)  # number of minutes between each tick mark -- 3hrs
+__nMinutesPerTick = int(2 * 60)  # number of minutes between each tick mark -- 3hrs
 
 lstLabelLocs = np.arange(0, __nMinutesInGraph + 1, __nMinutesPerTick)  # the "minutes-location" of each tick mark, including one at the very end
 lstLabels = list([formatMinutesToConciseHourLabel(60*24)])  # start it off with a "12a" at the zero-minute
@@ -148,17 +150,20 @@ for minute in lstLabelLocs[1:] :
 fig, ax = plt.subplots(figsize=(20,6))
 
 ax.set_xlim(0,1)  # remove the left/right padding around the plot area
-ax.set_ylim(0,1)  # remove the top/bottom padding around the plot area
+ax.set_ylim(0,)  # remove the top/bottom padding around the plot area
 ax.set_title(datetime.strftime(dateStartDate, "%A %B %d"), loc = 'left')
 ax.set_ylabel("water level")
 
 # tick marks a time-axis labels
 plt.xticks(lstLabelLocs, (lstLabels))
-plt.yticks(np.arange(-1, 8))
+plt.yticks(np.arange(-2, 8))
+
+# gridlines at each hour
+plt.grid(axis='x')
 
 # plot the data
 ax.fill_between([0, fltTimes[-1]], 0, [1,1], color='lightblue', zorder=0)  # show a line at 1 foot (during daytime)
-ax.fill_between(lstNightSegsX, -1, lstNightSegsY, color='lightgray')  # shade the background for night time (6a to 6p)
+ax.fill_between(lstNightSegsX, -2, lstNightSegsY, color='lightgray')  # shade the background for night time (6a to 6p)
 ax.plot(fltTimes, fltLevels)  # plot the water level curve
 ax.fill_between(fltTimes, 0, fltLevels)  # fill in the area under the curve
 

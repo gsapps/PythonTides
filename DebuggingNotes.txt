@@ -1,0 +1,2 @@
+Open tides.py
+Start debugging with F5
