@@ -14,5 +14,8 @@ dependencies = [
 org = "com.grandview"
 product = "Tides"
 
+[tool.flet.android]
+split_per_abi = true
+
 [tool.flet.app]
 module = "main"

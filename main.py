@@ -62,18 +62,18 @@ def concise_hour_label(minute: int) -> str:
 # ---------------------------------------------------------------- data
 
 
-_tide_cache: dict = {}  # (iso_date, days) -> (times, levels)
+_day_cache: dict = {}  # iso_date -> (times, levels), times relative to that day's midnight
 
 
-def fetch_tides(start: datetime, days: int):
-    """Fetch NOAA predictions; return (times_in_minutes, levels_in_feet)."""
-    key = (start.date().isoformat(), days)
-    if key in _tide_cache:
-        return _tide_cache[key]
+def fetch_day(day: datetime):
+    """Fetch one day of NOAA predictions; cached per calendar day."""
+    key = day.date().isoformat()
+    if key in _day_cache:
+        return _day_cache[key]
 
     url = NOAA_URL.format(
-        date=start.date().isoformat().replace("-", ""),
-        hours=days * 24,
+        date=key.replace("-", ""),
+        hours=24,
         station=STATION,
     )
     resp = requests.get(url, timeout=20)
@@ -83,12 +83,23 @@ def fetch_tides(start: datetime, days: int):
     times, levels = [], []
     for wl in root.iter("pr"):
         t = datetime.strptime(wl.attrib["t"], "%Y-%m-%d %H:%M")
-        times.append(total_minutes(t - start))
+        times.append(total_minutes(t - day))
         levels.append(float(wl.attrib["v"]))
 
     if not times:
         raise ValueError("NOAA returned no prediction data")
-    _tide_cache[key] = (times, levels)
+    _day_cache[key] = (times, levels)
+    return times, levels
+
+
+def fetch_tides(start: datetime, days: int):
+    """Assemble (times_in_minutes, levels_in_feet) for a window from per-day caches."""
+    times, levels = [], []
+    for i in range(days):
+        day_times, day_levels = fetch_day(start + timedelta(days=i))
+        offset = i * 24 * 60
+        times.extend(t + offset for t in day_times)
+        levels.extend(day_levels)
     return times, levels
 
 
@@ -127,7 +138,6 @@ def build_figure(start: datetime, times, levels, days: int, portrait: bool):
         end = start + timedelta(days=days - 1)
         title = f"{start:%a %b %d} \u2013 {end:%a %b %d}"
     ax.set_title(title, loc="left")
-    ax.set_ylabel("water level")
 
     # tick marks and time-axis labels
     tick_locs = np.arange(0, end_minute + 1, tick_hours * 60)
@@ -241,17 +251,26 @@ def main(page: ft.Page):
 
     page.on_resized = on_resized
 
+    def go_today(e=None):
+        """Jump back to the current date and re-render (also refreshes the now-line)."""
+        nonlocal anchor
+        anchor = date.today()
+        load()
+
     page.appbar = ft.AppBar(
         title=ft.Text("Tides"),
         actions=[
             ft.IconButton(ft.Icons.CHEVRON_LEFT, tooltip="Earlier", on_click=lambda e: go(-1)),
-            ft.IconButton(ft.Icons.REFRESH, tooltip="Refresh", on_click=load),
+            ft.IconButton(ft.Icons.TODAY, tooltip="Today", on_click=go_today),
             ft.IconButton(ft.Icons.CHEVRON_RIGHT, tooltip="Later", on_click=lambda e: go(1)),
         ],
     )
     page.add(
-        ft.Column(
-            [ft.Row([progress]), status, swiper],
+        ft.SafeArea(
+            ft.Column(
+                [ft.Row([progress]), status, swiper],
+                expand=True,
+            ),
             expand=True,
         )
     )
