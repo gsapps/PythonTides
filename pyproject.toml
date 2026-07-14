@@ -1,0 +1,18 @@
+[project]
+name = "tides"
+version = "0.1.0"
+description = "NOAA tide prediction chart"
+requires-python = ">=3.9"
+dependencies = [
+    "flet==0.28.3",
+    "requests",
+    "numpy",
+    "matplotlib",
+]
+
+[tool.flet]
+org = "com.grandview"
+product = "Tides"
+
+[tool.flet.app]
+module = "main"
