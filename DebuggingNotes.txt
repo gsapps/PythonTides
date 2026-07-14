@@ -1,2 +1,6 @@
-Open tides.py
-Start debugging with F5
+build android .apk with:
+$env:PYTHONUTF8="1"; $env:JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot"; $env:ANDROID_HOME="C:\Users\billo\Android\sdk"; py -m flet.cli build apk --arch arm64-v8a
+need a different flag/apk to publish to google play
+
+build local text version with:
+py main.py
