@@ -186,7 +186,7 @@ def main(page: ft.Page):
     status = ft.Text(visible=False, color=ft.Colors.RED)
     progress = ft.ProgressRing(visible=False, width=24, height=24)
     chart_holder = ft.Container(alignment=ft.alignment.top_center, width=float("inf"))
-    info_holder = ft.Container(expand=True, alignment=ft.alignment.top_center)
+    info_holder = ft.Container(alignment=ft.alignment.top_center)
 
     def is_portrait() -> bool:
         return (page.height or 600) > (page.width or 800)
