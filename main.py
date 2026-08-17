@@ -34,7 +34,7 @@ PORTRAIT_DAYS = 1
 LANDSCAPE_DAYS = 4
 PORTRAIT_TICK_HOURS = 3
 LANDSCAPE_TICK_HOURS = 3
-PORTRAIT_FIGSIZE = (4.5, 9.9)  # 1 : 2.2
+PORTRAIT_FIGSIZE = (4.5, 5.94)  # same width as before, height reduced to 60%
 LANDSCAPE_FIGSIZE = (9.9, 4.5)  # 2.2 : 1
 SWIPE_THRESHOLD = 50  # logical px of horizontal drag that counts as a swipe
 NOW_LINE_COLOR = (0.2, 1.0, 0.4)  # RGB floats 0–1; brighter green so it reads on the blue fill
@@ -121,6 +121,11 @@ def night_segments(range_days: int):
     return xs, ys
 
 
+def current_tide_level(times, levels, now_minute: float) -> float:
+    """Interpolate the NOAA prediction data at the current time (in feet)."""
+    return float(np.interp(now_minute, times, levels))
+
+
 # ---------------------------------------------------------------- plotting
 
 
@@ -180,7 +185,8 @@ def main(page: ft.Page):
 
     status = ft.Text(visible=False, color=ft.Colors.RED)
     progress = ft.ProgressRing(visible=False, width=24, height=24)
-    chart_holder = ft.Container(expand=True, alignment=ft.alignment.center)
+    chart_holder = ft.Container(alignment=ft.alignment.top_center, width=float("inf"))
+    info_holder = ft.Container(expand=True, alignment=ft.alignment.top_center)
 
     def is_portrait() -> bool:
         return (page.height or 600) > (page.width or 800)
@@ -199,6 +205,30 @@ def main(page: ft.Page):
             fig = build_figure(start, times, levels, days, is_portrait())
             chart_holder.content = MatplotlibChart(fig, expand=True)
             plt.close(fig)
+
+            # In portrait, shrink the graph to 60% of its height and pin it to
+            # the top; below it show the current tide level only when the
+            # visible day is today (i.e. the green now-line is drawn).
+            if is_portrait():
+                chart_holder.height = int((page.height or 600) * 0.6)
+                now_minute = total_minutes(datetime.now() - start)
+                if 0 <= now_minute <= days * 24 * 60:
+                    level = current_tide_level(times, levels, now_minute)
+                    info_holder.content = ft.Column(
+                        [
+                            ft.Text(
+                                f"{level:.1f} ft",
+                                size=28,
+                                weight=ft.FontWeight.BOLD,
+                            ),
+                        ],
+                        spacing=8,
+                    )
+                else:
+                    info_holder.content = None
+            else:
+                chart_holder.height = None
+                info_holder.content = None
         except requests.RequestException as ex:
             status.value = f"Network error – check your connection.\n{ex}"
             status.visible = True
@@ -268,7 +298,7 @@ def main(page: ft.Page):
     page.add(
         ft.SafeArea(
             ft.Column(
-                [ft.Row([progress]), status, swiper],
+                [ft.Row([progress]), status, swiper, info_holder],
                 expand=True,
             ),
             expand=True,
